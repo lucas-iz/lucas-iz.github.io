@@ -5,8 +5,13 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    gap: 10px;
 }
 
 .container div {
     background-color: blue;
+    width: 30%;
+    height: 100%;
+
+    font-size: larger;
 }
