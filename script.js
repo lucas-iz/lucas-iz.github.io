@@ -56,7 +56,7 @@ function updateSpeedLimit(lat, lng) {
 
             console.log("Speed Limits:", speedLimits);
 
-            // document.getElementById("speed-limit").textContent = speedLimit;
+            document.getElementById("speedlimit").textContent = speedLimits.join(", ") || "No speed limit found";
         })
         .catch((error) => {
             console.error("Error fetching speed limit:", error);
