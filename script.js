@@ -10,7 +10,7 @@ function updatePosition() {
             (position) => {
                 console.log("Position updated:", position.coords);
 
-                speedDiv.textContent = position.coords.speed ? position.coords.speed.toFixed(2) : "0.00";
+                speedDiv.textContent = position.coords.speed ? position.coords.speed.toFixed(0) : "0";
                 updateData(position.coords.latitude, position.coords.longitude);
             },
             (error) => {
