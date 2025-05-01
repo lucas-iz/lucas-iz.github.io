@@ -1,5 +1,8 @@
 body {
     margin: 0;
+    background-color: #333;
+    color: #fff;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
 
     display: flex;
     justify-content: center;
@@ -27,13 +30,19 @@ body {
     align-items: center;
 }
 
-.speedlimit {
+.container div .speedlimit {
     width: 80%;
     height: auto;
 }
 
-.speedlimit img {
+.container div .speedlimit img {
     width: 100%;
     height: auto;
     object-fit: cover;
+}
+
+.container div .speed {
+    position: absolute;
+    top: 20%;
+    font-size: 2em !important;
 }
