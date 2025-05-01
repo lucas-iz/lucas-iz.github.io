@@ -1,6 +1,6 @@
 // Check if geolocation is available in the browser
 if ("geolocation" in navigator) {
-    navigator.geolocation.getCurrentPosition(
+    navigator.geolocation.watchPosition(
         (position) => {
             console.log("Latitude:", position.coords.latitude);
             console.log("Longitude:", position.coords.longitude);
@@ -12,7 +12,7 @@ if ("geolocation" in navigator) {
             lngDiv.textContent = position.coords.longitude;
         },
         (error) => {
-            console.error("Error getting location:", error.message);
+            console.error("Error watching location:", error.message);
         }
     );
 } else {
