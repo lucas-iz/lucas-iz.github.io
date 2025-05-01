@@ -25,17 +25,20 @@ function updatePosition() {
 }
 
 async function updateSpeedLimit(lat, lng) {
-    lat = 50.74366649411477;
-    lng = 9.259856407964262;
-
     const data = await fetchData(lat, lng);
     if (data) {
-        console.log("1. Fetched data:", data);
+        console.log("1. Fetched data:", {
+            position: { lat, lng },
+            data
+        });
         const closestPoint = snapToClosestRoad({ lat: lat, lon: lng }, data.elements);
 
         const updatedData = await fetchData(closestPoint.lat, closestPoint.lon);
         if (updatedData) {
-            console.log("2. Fetched updated data:", updatedData);
+            console.log("2. Fetched updated data:", {
+                position: { lat: closestPoint.lat, lon: closestPoint.lon },
+                updatedData
+            });
             // const speedLimit = updatedData.elements[0].tags.maxspeed;
             // console.log("Speed Limit:", speedLimit);
         } else {
