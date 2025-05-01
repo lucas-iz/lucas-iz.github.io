@@ -11,7 +11,7 @@ function updatePosition() {
                 console.log("Position updated:", position.coords);
 
                 speedDiv.textContent = position.coords.speed ? position.coords.speed.toFixed(2) : "0.00";
-                updateSpeedLimit(position.coords.latitude, position.coords.longitude);
+                updateData(position.coords.latitude, position.coords.longitude);
             },
             (error) => {
                 console.error("Error watching location:", error.message);
@@ -22,7 +22,7 @@ function updatePosition() {
     }
 }
 
-async function updateSpeedLimit(lat, lng) {
+async function updateData(lat, lng) {
     const data = await fetchData(lat, lng, 50);
     if (data) {
         const closestPoint = snapToClosestRoad({ lat: lat, lon: lng }, data.elements);
@@ -35,15 +35,9 @@ async function updateSpeedLimit(lat, lng) {
 
         const updatedData = await fetchData(closestPoint.lat, closestPoint.lon);
         if (updatedData) {
-            const speedLimit = parseInt(updatedData.elements[0].tags.maxspeed, 10);
-            console.log("Speed Limit:", speedLimit);
-
-            const speedlimitImg = document.createElement("img");
-            speedlimitImg.src = `verkehrszeichen/274-${speedLimit}.png`;
-            speedlimitImg.alt = `Speed Limit: ${speedLimit}`;
-
-            document.getElementById("speedlimit").innerHTML = "";
-            document.getElementById("speedlimit").appendChild(speedlimitImg);
+            updateSpeedLimit(data);
+            updateOvertakingBan(data);
+            
         } else {
             console.error("Failed to fetch updated osm data.");
         }
@@ -154,3 +148,56 @@ async function fetchData(lat, lng, radius = 5) {
     }
 }
 
+/* Functions to change the speedlimit, overtaking bans, and other road attributes */
+function updateSpeedLimit(data) {
+    let speedLimit = data.elements[0].tags.maxspeed;
+
+    if(!speedLimit || speedLimit === "none") {
+        console.log("Speed Limit: None");
+
+        const speedlimitImg = document.createElement("img");
+        speedlimitImg.src = `verkehrszeichen/282.png`;
+        speedlimitImg.alt = `Speed Limit: None`;
+
+        document.getElementById("speedlimit").innerHTML = "";
+        document.getElementById("speedlimit").appendChild(speedlimitImg);
+    }
+    else {
+        speedLimit = parseInt(speedLimit, 10);
+        console.log("Speed Limit:", speedLimit);
+
+        const speedlimitImg = document.createElement("img");
+        speedlimitImg.src = `verkehrszeichen/274-${speedLimit}.png`;
+        speedlimitImg.alt = `Speed Limit: ${speedLimit}`;
+
+        document.getElementById("speedlimit").innerHTML = "";
+        document.getElementById("speedlimit").appendChild(speedlimitImg);
+    }
+}
+
+function updateOvertakingBan(data) {
+    const overtakingBanForTrucks = data.elements[0].tags["overtaking:hgv"];
+    const overtakingBan = data.elements[0].tags["overtaking"];
+
+    console.log("Overtaking Ban for Trucks:", overtakingBanForTrucks);
+    console.log("Overtaking Ban:", overtakingBan);
+
+    if(!overtakingBan && !overtakingBanForTrucks) {
+        console.log("No overtaking ban");
+        return;
+    }
+
+    const overtakingBanImg = document.createElement("img");
+    if (overtakingBan === "no") {
+        overtakingBanImg.src = "verkehrszeichen/276.png";
+        overtakingBanImg.alt = "Overtaking Ban";
+    }
+    else if (overtakingBanForTrucks === "no") {
+        overtakingBanImg.src = "verkehrszeichen/277.png";
+        overtakingBanImg.alt = "Overtaking Ban for Trucks";
+    }
+
+    const overtakingBanDiv = document.getElementById("overtakingBan");
+    overtakingBanDiv.innerHTML = "";
+    overtakingBanDiv.appendChild(overtakingBanImg);
+}

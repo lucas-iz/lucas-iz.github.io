@@ -30,12 +30,14 @@ body {
     align-items: center;
 }
 
-.container div .speedlimit {
+.container div .speedlimit,
+.container div .overtakingBan {
     width: 80%;
     height: auto;
 }
 
-.container div .speedlimit img {
+.container div .speedlimit img,
+.container div .overtakingBan img {
     width: 100%;
     height: auto;
     object-fit: cover;
@@ -51,14 +53,6 @@ body {
 }
 
 @media (orientation: landscape) {
-    /* .container {
-        flex-direction: row;
-    }
-
-    .container div {
-        width: 25%;
-    } */
-
     .container div .speed {
         top: 35%;
     }
