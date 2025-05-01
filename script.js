@@ -24,52 +24,31 @@ function updatePosition() {
     }
 }
 
-function updateSpeedLimit(lat, lng) {
+async function updateSpeedLimit(lat, lng) {
     lat = 50.74366649411477;
     lng = 9.259856407964262;
 
-    const url = "https://overpass-api.de/api/interpreter";
-    fetch(url, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: `
-            [out:json];
-            way(around:50, ${lat}, ${lng})["highway"~"motorway|trunk|primary|secondary|tertiary|unclassified|residential|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link"];
-            out body geom;
-        `
-    })
-        .then((response) => {
-            if (!response.ok) {
-                throw new Error("Network response was not ok");
-            }
-            return response.json();
-        })
-        .then((data) => {
-            console.log(data);
+    const data = await fetchData(lat, lng);
+    if (data) {
+        console.log("1. Fetched data:", data);
+        const closestPoint = snapToClosestRoad({ lat: lat, lon: lng }, data.elements);
 
-            const input = { lat: lat, lon: lng }; // point to snap
-            const snapped = snapToClosestRoad(input, data.elements); // assuming "elements" is a list of ways
-            console.log("Snapped point:", snapped);
-            
-            const speedLimits = data.elements.map((element) => {
-                const tags = element.tags;
-                if (tags && tags.maxspeed) {
-                    return parseInt(tags.maxspeed, 10);
-                }
-                return null;
-            }).filter((limit) => limit !== null);
-
-            console.log("Speed Limits:", speedLimits);
-            document.getElementById("speedlimit").textContent = speedLimits.join(", ") || "No speed limit found";
-        })
-        .catch((error) => {
-            console.error("Error fetching speed limit:", error);
-        });
+        const updatedData = await fetchData(closestPoint.lat, closestPoint.lon);
+        if (updatedData) {
+            console.log("2. Fetched updated data:", updatedData);
+            // const speedLimit = updatedData.elements[0].tags.maxspeed;
+            // console.log("Speed Limit:", speedLimit);
+        } else {
+            console.error("Failed to fetch updated osm data.");
+        }
+    } else {
+        console.error("Failed to fetch osm data.");
+    }
 }
 
 /*** HELPER FUNCTIONS ***/
+
+/* Functions for snapping to the closest road segment */
 
 // Convert degrees to radians
 function toRad(deg) {
@@ -138,4 +117,32 @@ function snapToClosestRoad(inputPoint, ways) {
 
     return closestPoint;
 }
-  
+
+async function fetchData(lat, lng) {
+    const url = "https://overpass-api.de/api/interpreter";
+
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: `
+                [out:json];
+                way(around:50, ${lat}, ${lng})["highway"~"motorway|trunk|primary|secondary|tertiary|unclassified|residential|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link"];
+                out body geom;
+            `
+        });
+
+        if (!response.ok) {
+            throw new Error("Network response was not ok");
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error("Error fetching speed limit:", error);
+        return null;
+    }
+}
+
