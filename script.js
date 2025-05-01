@@ -3,15 +3,13 @@ updatePosition();
 /*** FUNCTION DEFINITIONS ***/
 
 function updatePosition() {
-    const latDiv = document.getElementById("lat");
-    const lngDiv = document.getElementById("lng");
     const speedDiv = document.getElementById("speed");
 
     if ("geolocation" in navigator) {
         navigator.geolocation.watchPosition(
             (position) => {
-                latDiv.textContent = position.coords.latitude;
-                lngDiv.textContent = position.coords.longitude;
+                console.log("Position updated:", position.coords);
+
                 speedDiv.textContent = position.coords.speed ? position.coords.speed.toFixed(2) : "0.00";
                 updateSpeedLimit(position.coords.latitude, position.coords.longitude);
             },
