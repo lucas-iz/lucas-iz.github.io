@@ -27,18 +27,16 @@ function updatePosition() {
 async function updateSpeedLimit(lat, lng) {
     const data = await fetchData(lat, lng, 50);
     if (data) {
-        // console.log("1. Fetched data:", {
-        //     position: { lat, lng },
-        //     data
-        // });
         const closestPoint = snapToClosestRoad({ lat: lat, lon: lng }, data.elements);
+
+        if (!closestPoint) {
+            console.error("Too far away from any road.");
+            document.getElementById("speedlimit").textContent = "Too far away from any road";
+            return;
+        }
 
         const updatedData = await fetchData(closestPoint.lat, closestPoint.lon);
         if (updatedData) {
-            // console.log("2. Fetched updated data:", {
-            //     position: { lat: closestPoint.lat, lon: closestPoint.lon },
-            //     updatedData
-            // });
             const speedLimit = parseInt(updatedData.elements[0].tags.maxspeed, 10);
             document.getElementById("speedlimit").textContent = speedLimit ? speedLimit : "No speed limit found";
             console.log("Speed Limit:", speedLimit);
