@@ -25,22 +25,22 @@ function updatePosition() {
 }
 
 async function updateSpeedLimit(lat, lng) {
-    const data = await fetchData(lat, lng);
+    const data = await fetchData(lat, lng, 50);
     if (data) {
-        console.log("1. Fetched data:", {
-            position: { lat, lng },
-            data
-        });
+        // console.log("1. Fetched data:", {
+        //     position: { lat, lng },
+        //     data
+        // });
         const closestPoint = snapToClosestRoad({ lat: lat, lon: lng }, data.elements);
 
         const updatedData = await fetchData(closestPoint.lat, closestPoint.lon);
         if (updatedData) {
-            console.log("2. Fetched updated data:", {
-                position: { lat: closestPoint.lat, lon: closestPoint.lon },
-                updatedData
-            });
-            // const speedLimit = updatedData.elements[0].tags.maxspeed;
-            // console.log("Speed Limit:", speedLimit);
+            // console.log("2. Fetched updated data:", {
+            //     position: { lat: closestPoint.lat, lon: closestPoint.lon },
+            //     updatedData
+            // });
+            const speedLimit = updatedData.elements[0].tags.maxspeed;
+            console.log("Speed Limit:", speedLimit);
         } else {
             console.error("Failed to fetch updated osm data.");
         }
@@ -121,7 +121,9 @@ function snapToClosestRoad(inputPoint, ways) {
     return closestPoint;
 }
 
-async function fetchData(lat, lng) {
+/* Functions for fetching data from Overpass API */
+
+async function fetchData(lat, lng, radius = 5) {
     const url = "https://overpass-api.de/api/interpreter";
 
     try {
@@ -132,7 +134,7 @@ async function fetchData(lat, lng) {
             },
             body: `
                 [out:json];
-                way(around:50, ${lat}, ${lng})["highway"~"motorway|trunk|primary|secondary|tertiary|unclassified|residential|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link"];
+                way(around:${radius}, ${lat}, ${lng})["highway"~"motorway|trunk|primary|secondary|tertiary|unclassified|residential|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link"];
                 out body geom;
             `
         });
