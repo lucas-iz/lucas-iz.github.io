@@ -1,5 +1,4 @@
 updatePosition();
-getSpeedLimit(52.520007, 13.404954);
 
 /*** FUNCTION DEFINITIONS ***/
 
@@ -34,7 +33,7 @@ function updateSpeedLimit(lat, lng) {
         },
         body: `
             [out:json];
-            way(around:10,${lat},${lng})["highway"];
+            way(around:50,${lat},${lng})["highway"];
             out body;
         `
     })
@@ -45,9 +44,19 @@ function updateSpeedLimit(lat, lng) {
             return response.json();
         })
         .then((data) => {
-            // const speedLimit = data.routes[0].summary.speed_limit;
-            // document.getElementById("speed-limit").textContent = speedLimit;
             console.log(data);
+            
+            const speedLimits = data.elements.map((element) => {
+                const tags = element.tags;
+                if (tags && tags.maxspeed) {
+                    return parseInt(tags.maxspeed, 10);
+                }
+                return null;
+            }).filter((limit) => limit !== null);
+
+            console.log("Speed Limits:", speedLimits);
+
+            // document.getElementById("speed-limit").textContent = speedLimit;
         })
         .catch((error) => {
             console.error("Error fetching speed limit:", error);
