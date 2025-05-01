@@ -25,6 +25,9 @@ function updatePosition() {
 }
 
 function updateSpeedLimit(lat, lng) {
+    lat = 50.74366649411477;
+    lng = 9.259856407964262;
+
     const url = "https://overpass-api.de/api/interpreter";
     fetch(url, {
         method: "POST",
@@ -33,7 +36,7 @@ function updateSpeedLimit(lat, lng) {
         },
         body: `
             [out:json];
-            way(around:50, 50.74366649411477, 9.259856407964262)["highway"~"motorway|trunk|primary|secondary|tertiary|unclassified|residential|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link"];
+            way(around:50, ${lat}, ${lng})["highway"~"motorway|trunk|primary|secondary|tertiary|unclassified|residential|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link"];
             out body geom;
         `
     })
