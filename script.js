@@ -33,8 +33,8 @@ function updateSpeedLimit(lat, lng) {
         },
         body: `
             [out:json];
-            way(around:50,${lat},${lng})["highway"];
-            out body;
+            way(around:50, 50.74366649411477, 9.259856407964262)["highway"~"motorway|trunk|primary|secondary|tertiary|unclassified|residential|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link"];
+            out body geom;
         `
     })
         .then((response) => {
