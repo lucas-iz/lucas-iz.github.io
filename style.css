@@ -44,5 +44,22 @@ body {
 .container div .speed {
     position: absolute;
     top: 20%;
+}
+
+.container div .speed #speed {
     font-size: 2em !important;
+}
+
+@media (orientation: landscape) {
+    /* .container {
+        flex-direction: row;
+    }
+
+    .container div {
+        width: 25%;
+    } */
+
+    .container div .speed {
+        top: 35%;
+    }
 }
