@@ -39,7 +39,8 @@ async function updateSpeedLimit(lat, lng) {
             //     position: { lat: closestPoint.lat, lon: closestPoint.lon },
             //     updatedData
             // });
-            const speedLimit = updatedData.elements[0].tags.maxspeed;
+            const speedLimit = parseInt(updatedData.elements[0].tags.maxspeed, 10);
+            document.getElementById("speedLimit").textContent = speedLimit ? speedLimit : "No speed limit found";
             console.log("Speed Limit:", speedLimit);
         } else {
             console.error("Failed to fetch updated osm data.");
