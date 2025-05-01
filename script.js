@@ -40,7 +40,7 @@ async function updateSpeedLimit(lat, lng) {
             //     updatedData
             // });
             const speedLimit = parseInt(updatedData.elements[0].tags.maxspeed, 10);
-            document.getElementById("speedLimit").textContent = speedLimit ? speedLimit : "No speed limit found";
+            document.getElementById("speedlimit").textContent = speedLimit ? speedLimit : "No speed limit found";
             console.log("Speed Limit:", speedLimit);
         } else {
             console.error("Failed to fetch updated osm data.");
