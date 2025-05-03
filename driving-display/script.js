@@ -19,7 +19,10 @@ function updatePosition() {
             (position) => {
                 console.log("Position updated:", position.coords);
 
-                speedDiv.textContent = position.coords.speed ? position.coords.speed.toFixed(0) : "0";
+                const speedMS = position.coords.speed;
+                const speedKPH = speedMS ? speedMS * 3.6 : 0; // Convert m/s to km/h
+
+                speedDiv.textContent = speedKPH.toFixed(0);
                 updateData(position.coords.latitude, position.coords.longitude);
             },
             (error) => {
