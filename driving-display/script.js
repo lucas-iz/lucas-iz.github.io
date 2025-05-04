@@ -1,6 +1,25 @@
 serviceWorkerRegistration();
 updatePosition(); 
 
+/*** MAP ***/
+
+var map = L.map('map').fitWorld();
+let positionMarker = null;
+let positionCircle = null;
+
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 15
+}).addTo(map);
+
+map.removeControl(map.zoomControl);
+map.removeControl(map.attributionControl);
+map.removeControl(map.scaleControl);
+
+map.locate({setView: true, maxZoom: 15});
+
+map.on('locationfound', onLocationFound);
+map.on('locationerror', onLocationError);
+
 /*** FUNCTION DEFINITIONS ***/
 
 function serviceWorkerRegistration() {
@@ -24,6 +43,22 @@ function updatePosition() {
 
                 speedDiv.textContent = speedKPH.toFixed(0);
                 updateData(position.coords.latitude, position.coords.longitude);
+
+                // Map
+                if (positionMarker) {
+                    positionMarker.setLatLng([position.coords.latitude, position.coords.longitude]);
+                } else {
+                    positionMarker = L.marker([position.coords.latitude, position.coords.longitude]).addTo(map);
+                }
+                if (positionCircle) {
+                    positionCircle.setLatLng([position.coords.latitude, position.coords.longitude]);
+                    positionCircle.setRadius(position.coords.accuracy);
+                } else {
+                    positionCircle = L.circle([position.coords.latitude, position.coords.longitude], {
+                        radius: position.coords.accuracy
+                    }).addTo(map);
+                }
+                map.setView([position.coords.latitude, position.coords.longitude], 15);
             },
             (error) => {
                 console.error("Error watching location:", error.message);
@@ -36,12 +71,16 @@ function updatePosition() {
 
 async function updateData(lat, lng) {
     const data = await fetchData(lat, lng, 50);
+
     if (data) {
+        console.log("Fetched OSM data:", data);
+        showDataOnMap(data);
+
         const closestPoint = snapToClosestRoad({ lat: lat, lon: lng }, data.elements);
 
         if (!closestPoint) {
-            console.error("Too far away from any road.");
-            document.getElementById("speedlimit").textContent = "Too far away from any road";
+            console.warn("Too far away from any road.");
+            // document.getElementById("speedlimit").textContent = "Too far away from any road";
             return;
         }
 
@@ -161,6 +200,7 @@ async function fetchData(lat, lng, radius = 5) {
 }
 
 /* Functions to change the speedlimit, overtaking bans, and other road attributes */
+
 function updateSpeedLimit(data) {
     let speedLimit = data.elements[0].tags.maxspeed;
 
@@ -212,4 +252,26 @@ function updateOvertakingBan(data) {
     const overtakingBanDiv = document.getElementById("overtakingBan");
     overtakingBanDiv.innerHTML = "";
     overtakingBanDiv.appendChild(overtakingBanImg);
+}
+
+/* Map functions */
+
+function onLocationFound(e) {
+    var radius = e.accuracy;
+
+    positionMarker = L.marker(e.latlng).addTo(map);
+    positionCircle = L.circle(e.latlng, radius).addTo(map);
+}
+
+function onLocationError(e) {
+    alert(e.message);
+}
+
+function showDataOnMap(data) {
+    data.elements.forEach(element => {
+        if (element.type === "way") {
+            const latlngs = element.geometry.map(coord => [coord.lat, coord.lon]);
+            L.polyline(latlngs, { color: 'blue' }).addTo(map);
+        }
+    });
 }
