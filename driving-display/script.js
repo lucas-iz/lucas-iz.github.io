@@ -1,6 +1,59 @@
 serviceWorkerRegistration();
 updatePosition(); 
 
+/*** VARIABLES ***/
+let previousWays = [{
+    "type": "way",
+    "id": 202156994,
+    "bounds": {
+      "minlat": 52.5193794,
+      "minlon": 13.4037577,
+      "maxlat": 52.5199179,
+      "maxlon": 13.4048107
+    },
+    "nodes": [
+      341340986,
+      4036910494,
+      3792411146,
+      3792418589,
+      29221506
+    ],
+    "geometry": [
+      { "lat": 52.5193794, "lon": 13.4037577 },
+      { "lat": 52.5194592, "lon": 13.4039173 },
+      { "lat": 52.5198265, "lon": 13.4046354 },
+      { "lat": 52.5198521, "lon": 13.4046833 },
+      { "lat": 52.5199179, "lon": 13.4048107 }
+    ],
+    "tags": {
+      "access:lanes": "yes|yes|yes|no|yes",
+      "bus:lanes": "no|no|no|designated|no",
+      "cycleway:left": "no",
+      "cycleway:right": "share_busway",
+      "foot": "use_sidepath",
+      "highway": "primary",
+      "lanes": "5",
+      "lanes:psv": "1",
+      "lit": "yes",
+      "maxspeed": "50",
+      "name": "Karl-Liebknecht-Straße",
+      "name:etymology:wikidata": "Q75886",
+      "oneway": "yes",
+      "parking:both": "no",
+      "ref": "B 2;B 5",
+      "sidewalk:left": "no",
+      "sidewalk:right": "separate",
+      "smoothness": "good",
+      "surface": "asphalt",
+      "turn:lanes": "left|through|through|none|right",
+      "wikidata": "Q551773",
+      "wikimedia_commons": "Category:Karl-Liebknecht-Straße (Berlin-Mitte)",
+      "wikipedia": "en:Karl-Liebknecht-Straße",
+      "zone:traffic": "DE:urban"
+    }
+  }
+  ];
+
 /*** MAP ***/
 
 var map = L.map('map').fitWorld();
@@ -8,7 +61,7 @@ let positionMarker = null;
 let positionCircle = null;
 
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 15
+    maxZoom: 19
 }).addTo(map);
 
 map.removeControl(map.zoomControl);
@@ -16,9 +69,6 @@ map.removeControl(map.attributionControl);
 map.removeControl(map.scaleControl);
 
 map.locate({setView: true, maxZoom: 15});
-
-map.on('locationfound', onLocationFound);
-map.on('locationerror', onLocationError);
 
 /*** FUNCTION DEFINITIONS ***/
 
@@ -48,7 +98,14 @@ function updatePosition() {
                 if (positionMarker) {
                     positionMarker.setLatLng([position.coords.latitude, position.coords.longitude]);
                 } else {
-                    positionMarker = L.marker([position.coords.latitude, position.coords.longitude]).addTo(map);
+                    positionMarker = L.circleMarker([position.coords.latitude, position.coords.longitude], {
+                        radius: 8,
+                        fillColor: "#3388ff",
+                        color: "#3388ff",
+                        weight: 1,
+                        opacity: 1,
+                        fillOpacity: 1
+                    }).addTo(map);
                 }
                 if (positionCircle) {
                     positionCircle.setLatLng([position.coords.latitude, position.coords.longitude]);
@@ -70,12 +127,9 @@ function updatePosition() {
 }
 
 async function updateData(lat, lng) {
-    const data = await fetchData(lat, lng, 50);
+    const data = await fetchWays(lat, lng, 50);
 
     if (data) {
-        console.log("Fetched OSM data:", data);
-        showDataOnMap(data);
-
         const closestPoint = snapToClosestRoad({ lat: lat, lon: lng }, data.elements);
 
         if (!closestPoint) {
@@ -84,11 +138,11 @@ async function updateData(lat, lng) {
             return;
         }
 
-        const updatedData = await fetchData(closestPoint.lat, closestPoint.lon);
-        if (updatedData) {
-            updateSpeedLimit(data);
-            updateOvertakingBan(data);
-            
+        const updatedData = await fetchWays(closestPoint.lat, closestPoint.lon);
+        console.log("Updated data:", updatedData);
+        if (updatedData || updateData.elements || updatedData.elements.length > 0) {
+            updateSpeedLimit(lat, lng, updatedData);
+            updateOvertakingBan(updatedData); 
         } else {
             console.error("Failed to fetch updated osm data.");
         }
@@ -147,9 +201,10 @@ function closestPointOnSegment(A, B, P) {
 }
 
 // Main function: find closest point on all ways
-function snapToClosestRoad(inputPoint, ways) {
+function snapToClosestRoad(inputPoint, ways, returnWay = false) {
     let minDist = Infinity;
     let closestPoint = null;
+    let closestWay = null;
 
     ways.forEach(way => {
         const geometry = way.geometry;
@@ -162,16 +217,22 @@ function snapToClosestRoad(inputPoint, ways) {
             if (dist < minDist) {
                 minDist = dist;
                 closestPoint = projected;
+                closestWay = way;
             }
         }
     });
 
-    return closestPoint;
+    if (returnWay) {
+        return closestWay;
+    }
+    else {
+        return closestPoint;
+    }
 }
 
 /* Functions for fetching data from Overpass API */
 
-async function fetchData(lat, lng, radius = 5) {
+async function fetchData(body) {
     const url = "https://overpass-api.de/api/interpreter";
 
     try {
@@ -180,11 +241,7 @@ async function fetchData(lat, lng, radius = 5) {
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
             },
-            body: `
-                [out:json];
-                way(around:${radius}, ${lat}, ${lng})["highway"~"motorway|trunk|primary|secondary|tertiary|unclassified|residential|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link"];
-                out body geom;
-            `
+            body: body
         });
 
         if (!response.ok) {
@@ -199,12 +256,62 @@ async function fetchData(lat, lng, radius = 5) {
     }
 }
 
+async function fetchWays(lat, lng, radius = 5) {
+    const body = `
+                [out:json];
+                way(around:${radius}, ${lat}, ${lng})["highway"~"motorway|trunk|primary|secondary|tertiary|unclassified|residential|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link"];
+                out body geom;
+            `;
+    
+    return fetchData(body);
+}
+
+async function fetchNextWay(currentWay) {
+    if (!previousWays.some(way => way.id === currentWay.id)) {
+        previousWays.push(currentWay);
+    }
+
+    const nodesIds = currentWay.nodes;
+    // console.log("Nodes:", nodesIds);
+    const streetName = currentWay.tags.name;
+    // console.log("Street Name:", streetName);
+
+    const body = `
+                [out:json];
+                node(id:${nodesIds.join(",")});
+                way(bn)["name"="${streetName}"];
+                out body geom;
+            `;
+    const data = await fetchData(body);
+
+    dataWithoutCurrentOrPreviousWays = data.elements.filter(way => {
+        // Current way is already in previousWays
+        return !previousWays.some(previousWay => previousWay.id === way.id);;
+    });
+
+    return dataWithoutCurrentOrPreviousWays;
+}
+
 /* Functions to change the speedlimit, overtaking bans, and other road attributes */
 
-function updateSpeedLimit(data) {
-    let speedLimit = data.elements[0].tags.maxspeed;
+async function updateSpeedLimit(lat, lng, data) {
 
-    if(!speedLimit || speedLimit === "none") {
+    const currentWay = snapToClosestRoad({lat: lat, lon: lng}, data.elements, true);
+    console.log("Current way:", currentWay);
+    showWaysOnMap([currentWay], "blue");
+
+    const nextWay = await predictNextWay(currentWay);
+    console.log("Predicted next way:", nextWay);
+    showWaysOnMap(nextWay, "red");
+
+    // TODO: To something with the predicted next way. Check with speedlimit from current way (???)
+
+    const speedLimit = currentWay.tags.maxspeed;
+
+    if(!speedLimit) {
+        console.log("No speed limit found");
+    }
+    else if(speedLimit === "none") {
         console.log("Speed Limit: None");
 
         const speedlimitImg = document.createElement("img");
@@ -267,11 +374,17 @@ function onLocationError(e) {
     alert(e.message);
 }
 
-function showDataOnMap(data) {
-    data.elements.forEach(element => {
-        if (element.type === "way") {
-            const latlngs = element.geometry.map(coord => [coord.lat, coord.lon]);
-            L.polyline(latlngs, { color: 'blue' }).addTo(map);
-        }
+function showWaysOnMap(ways, color="blue") {
+    ways.forEach(way => {
+        const latlngs = way.geometry.map(coord => [coord.lat, coord.lon]);
+        L.polyline(latlngs, { color }).addTo(map);
     });
+}
+
+async function predictNextWay(currentWay) {
+    const possibleNextWays = await fetchNextWay(currentWay);
+
+    // console.log("Possible next ways:", possibleNextWays);
+
+    return possibleNextWays;
 }
