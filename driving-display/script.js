@@ -306,7 +306,7 @@ async function updateSpeedLimit(lat, lng, data) {
 
     // TODO: To something with the predicted next way. Check with speedlimit from current way (???)
 
-    const speedLimit = currentWay.tags.maxspeed;
+    let speedLimit = currentWay.tags.maxspeed;
 
     if(!speedLimit) {
         console.log("No speed limit found");
