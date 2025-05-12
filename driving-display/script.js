@@ -1,5 +1,5 @@
 serviceWorkerRegistration();
-updatePosition(); 
+updatePosition();
 
 /*** VARIABLES ***/
 let previousWays = [{
@@ -54,6 +54,8 @@ let previousWays = [{
   }
   ];
 
+let wakeLock = null;
+
 /*** MAP ***/
 
 var map = L.map('map').fitWorld();
@@ -78,6 +80,13 @@ function serviceWorkerRegistration() {
             .then(() => console.log('Service Worker registered'))
             .catch(err => console.error('Service Worker registration failed', err));
     }
+
+    // Automatically re-request wake lock on visibility change
+    document.addEventListener('visibilitychange', () => {
+    if (wakeLock !== null && document.visibilityState === 'visible') {
+        requestWakeLock();
+    }
+    });
 }      
 
 function updatePosition() {
@@ -149,6 +158,21 @@ async function updateData(lat, lng) {
     } else {
         console.error("Failed to fetch osm data.");
     }
+}
+
+async function requestWakeLock() {
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    console.log('Wake Lock is active');
+
+    // Reapply wake lock if it is released (e.g., screen orientation change)
+    wakeLock.addEventListener('release', () => {
+      console.log('Wake Lock was released');
+      requestWakeLock(); // Reapply the lock
+    });
+  } catch (err) {
+    console.error(`${err.name}, ${err.message}`);
+  }
 }
 
 /*** HELPER FUNCTIONS ***/
