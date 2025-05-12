@@ -53,7 +53,7 @@ let previousWays = [{
     }
   }
   ];
-
+let previousSpeedlimits = []
 let wakeLock = null;
 
 /*** MAP ***/
@@ -99,8 +99,8 @@ function updatePosition() {
 
                 const speedMS = position.coords.speed;
                 const speedKPH = speedMS ? speedMS * 3.6 : 0; // Convert m/s to km/h
-
                 speedDiv.textContent = speedKPH.toFixed(0);
+
                 updateData(position.coords.latitude, position.coords.longitude);
 
                 // Map
@@ -349,12 +349,30 @@ async function updateSpeedLimit(lat, lng, data) {
         speedLimit = parseInt(speedLimit, 10);
         console.log("Speed Limit:", speedLimit);
 
-        const speedlimitImg = document.createElement("img");
-        speedlimitImg.src = `verkehrszeichen/274-${speedLimit}.png`;
-        speedlimitImg.alt = `Speed Limit: ${speedLimit}`;
+        const amountOfPreviousSpeedlimitsToCheck = 3;
 
-        document.getElementById("speedlimit").innerHTML = "";
-        document.getElementById("speedlimit").appendChild(speedlimitImg);
+        // Update speed display if last 3 values of previousSpeedlimits are equal to current speed limit
+        if (previousSpeedlimits.length >= amountOfPreviousSpeedlimitsToCheck) {
+            const allEqual = previousSpeedlimits.every((val, i, arr) => val === arr[0]);
+            const speedlimitSameAsPrevious = previousSpeedlimits[0] === speedLimit;
+            if (allEqual && speedlimitSameAsPrevious) {
+                // Change speedlimit
+                const speedlimitImg = document.createElement("img");
+                speedlimitImg.src = `verkehrszeichen/274-${speedLimit}.png`;
+                speedlimitImg.alt = `Speed Limit: ${speedLimit}`;
+
+                document.getElementById("speedlimit").innerHTML = "";
+                document.getElementById("speedlimit").appendChild(speedlimitImg);
+            }
+        }
+
+        // Add speedKPH to front of previousSpeedlimits and keep only three values (the first three)
+        previousSpeedlimits.unshift(speedLimit);
+
+        // Remove last element of previousSpeedlimits if it has more than 3 elements
+        if (previousSpeedlimits.length > amountOfPreviousSpeedlimitsToCheck) {
+            previousSpeedlimits.pop();
+        }
     }
 }
 
