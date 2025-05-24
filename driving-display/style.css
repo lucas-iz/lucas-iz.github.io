@@ -54,6 +54,11 @@ body {
     font-size: 2em !important;
 }
 
+.container div .heading {
+    position: absolute;
+    top: 45%;
+}
+
 @media (orientation: landscape) {
     .container div .speed {
         top: 35%;

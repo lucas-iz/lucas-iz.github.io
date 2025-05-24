@@ -87,17 +87,22 @@ function serviceWorkerRegistration() {
 
 function updatePosition() {
   const speedDiv = document.getElementById("speed");
+  const hdgDiv = document.getElementById("heading");
 
   if ("geolocation" in navigator) {
     navigator.geolocation.watchPosition(
       (position) => {
         console.log("Position updated:", position.coords);
+        console.log("Heading:", position.coords.heading);
 
         const speedMS = position.coords.speed;
         const speedKPH = speedMS ? speedMS * 3.6 : 0; // Convert m/s to km/h
         speedDiv.textContent = speedKPH.toFixed(0);
+        hdgDiv.textContent = position.coords.heading
+          ? position.coords.heading.toFixed(0) + " °"
+          : "-";
 
-        updateData(position.coords.latitude, position.coords.longitude);
+        updateData(position);
 
         // Map
         if (positionMarker) {
@@ -143,7 +148,11 @@ function updatePosition() {
   }
 }
 
-async function updateData(lat, lng) {
+async function updateData(position) {
+  lat = position.coords.latitude;
+  lng = position.coords.longitude;
+  hdg = position.coords.heading; // maybe null
+
   const data = await fetchWays(lat, lng, 50);
 
   if (data) {
@@ -430,6 +439,8 @@ function updateOvertakingBan(data) {
 
 function onLocationFound(e) {
   var radius = e.accuracy;
+  let heading = e.coords.heading; // may be null
+  console.log("Location found:", e);
 
   positionMarker = L.marker(e.latlng).addTo(map);
   positionCircle = L.circle(e.latlng, radius).addTo(map);
