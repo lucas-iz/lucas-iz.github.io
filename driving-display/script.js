@@ -383,9 +383,7 @@ async function updateSpeedLimit(lat, lng, data) {
 
   let speedLimit = currentWay.tags.maxspeed;
 
-  if (speedLimit) {
-    document.getElementById("heading").textContent += ` | ${speedLimit}`;
-  }
+  document.getElementById("speedLimitText").textContent = speedLimit;
 
   const speedlimitDiv = document.getElementById("speedlimit");
 
