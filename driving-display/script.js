@@ -380,7 +380,7 @@ async function updateSpeedLimit(lat, lng, data) {
 
   // TODO: To something with the predicted next way. Check with speedlimit from current way (???)
 
-  let speedLimit = "30"; //currentWay.tags.maxspeed;
+  let speedLimit = currentWay.tags.maxspeed;
 
   const speedlimitDiv = document.getElementById("speedlimit");
 
