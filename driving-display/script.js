@@ -92,9 +92,6 @@ function updatePosition() {
   if ("geolocation" in navigator) {
     navigator.geolocation.watchPosition(
       (position) => {
-        console.log("Position updated:", position.coords);
-        console.log("Heading:", position.coords.heading);
-
         const speedMS = position.coords.speed;
         const speedKPH = speedMS ? speedMS * 3.6 : 0; // Convert m/s to km/h
         speedDiv.textContent = speedKPH.toFixed(0);
@@ -104,7 +101,7 @@ function updatePosition() {
 
         updateData(position);
 
-        // Map
+        // Update Map
         if (positionMarker) {
           positionMarker.setLatLng([
             position.coords.latitude,
@@ -166,6 +163,20 @@ async function updateData(position) {
       // document.getElementById("speedlimit").textContent = "Too far away from any road";
       return;
     }
+
+    // Display closest point on map
+    const closestPointMarker = L.circleMarker(
+      [closestPoint.lat, closestPoint.lon],
+      {
+        radius: 6,
+        fillColor: "#ff0000",
+        color: "#800000",
+        weight: 1,
+        opacity: 1,
+        fillOpacity: 1,
+      }
+    ).addTo(map);
+    closestPointMarker.setZIndexOffset(10);
 
     const updatedData = await fetchWays(closestPoint.lat, closestPoint.lon);
     console.log("Updated data:", updatedData);
@@ -365,8 +376,11 @@ async function updateSpeedLimit(lat, lng, data) {
 
   let speedLimit = currentWay.tags.maxspeed;
 
+  const speedlimitDiv = document.getElementById("speedlimit");
+
   if (!speedLimit) {
     console.log("No speed limit found");
+    speedlimitDiv.innerHTML = "";
   } else if (speedLimit === "none") {
     console.log("Speed Limit: None");
 
@@ -374,11 +388,10 @@ async function updateSpeedLimit(lat, lng, data) {
     speedlimitImg.src = `verkehrszeichen/282.png`;
     speedlimitImg.alt = `Speed Limit: None`;
 
-    document.getElementById("speedlimit").innerHTML = "";
-    document.getElementById("speedlimit").appendChild(speedlimitImg);
+    speedlimitDiv.innerHTML = "";
+    speedlimitDiv.appendChild(speedlimitImg);
   } else {
     speedLimit = parseInt(speedLimit, 10);
-    console.log("Speed Limit:", speedLimit);
 
     const amountOfPreviousSpeedlimitsToCheck = 3;
 
@@ -399,7 +412,7 @@ async function updateSpeedLimit(lat, lng, data) {
       }
     }
 
-    // Add speedKPH to front of previousSpeedlimits and keep only three values (the first three)
+    // Add speedKPH to front of previousSpeedlimits
     previousSpeedlimits.unshift(speedLimit);
 
     // Remove last element of previousSpeedlimits if it has more than 3 elements
@@ -410,29 +423,24 @@ async function updateSpeedLimit(lat, lng, data) {
 }
 
 function updateOvertakingBan(data) {
+  const overtakingBanDiv = document.getElementById("overtakingBan");
+
   const overtakingBanForTrucks = data.elements[0].tags["overtaking:hgv"];
   const overtakingBan = data.elements[0].tags["overtaking"];
-
-  console.log("Overtaking Ban for Trucks:", overtakingBanForTrucks);
-  console.log("Overtaking Ban:", overtakingBan);
-
-  if (!overtakingBan && !overtakingBanForTrucks) {
-    console.log("No overtaking ban");
-    return;
-  }
 
   const overtakingBanImg = document.createElement("img");
   if (overtakingBan === "no") {
     overtakingBanImg.src = "verkehrszeichen/276.png";
     overtakingBanImg.alt = "Overtaking Ban";
+    overtakingBanDiv.appendChild(overtakingBanImg);
   } else if (overtakingBanForTrucks === "no") {
     overtakingBanImg.src = "verkehrszeichen/277.png";
     overtakingBanImg.alt = "Overtaking Ban for Trucks";
+    overtakingBanDiv.appendChild(overtakingBanImg);
+  } else {
+    overtakingBanDiv.innerHTML = "";
+    console.log("No overtaking ban");
   }
-
-  const overtakingBanDiv = document.getElementById("overtakingBan");
-  overtakingBanDiv.innerHTML = "";
-  overtakingBanDiv.appendChild(overtakingBanImg);
 }
 
 /* Map functions */
