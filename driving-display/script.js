@@ -166,22 +166,27 @@ async function updateData(position) {
     }
 
     // TEST: Display closest point on map
-    if (haversineDistance(lat, lng, closestPoint.lat, closestPoint.lon) > 10) {
-      // Display closest point on map
-      if (closestPointMarker) {
-        closestPointMarker.setLatLng([closestPoint.lat, closestPoint.lon]);
-      } else {
-        closestPointMarker = L.circleMarker(
-          [closestPoint.lat, closestPoint.lon],
-          {
-            radius: 6,
-            fillColor: "#ff0000",
-            color: "#800000",
-            weight: 1,
-            opacity: 1,
-            fillOpacity: 1,
-          }
-        ).addTo(map);
+    const showClosestPointOnMap = false; // Set to false to disable displaying closest point on map
+    if (showClosestPointOnMap) {
+      if (
+        haversineDistance(lat, lng, closestPoint.lat, closestPoint.lon) > 10
+      ) {
+        // Display closest point on map
+        if (closestPointMarker) {
+          closestPointMarker.setLatLng([closestPoint.lat, closestPoint.lon]);
+        } else {
+          closestPointMarker = L.circleMarker(
+            [closestPoint.lat, closestPoint.lon],
+            {
+              radius: 6,
+              fillColor: "#ff0000",
+              color: "#800000",
+              weight: 1,
+              opacity: 1,
+              fillOpacity: 1,
+            }
+          ).addTo(map);
+        }
       }
     }
 
