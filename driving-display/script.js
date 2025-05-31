@@ -383,7 +383,9 @@ async function updateSpeedLimit(lat, lng, data) {
 
   let speedLimit = currentWay.tags.maxspeed;
 
-  document.getElementById("heading").textContent += ` | ${speedLimit || "-"}`;
+  if (speedLimit) {
+    document.getElementById("heading").textContent += ` | ${speedLimit}`;
+  }
 
   const speedlimitDiv = document.getElementById("speedlimit");
 
@@ -400,6 +402,9 @@ async function updateSpeedLimit(lat, lng, data) {
     speedlimitDiv.innerHTML = "";
     speedlimitDiv.appendChild(speedlimitImg);
   } else {
+    if (speedLimit.includes("mph")) {
+      speedLimit = speedLimit.replace("mph", "").trim();
+    }
     speedLimit = parseInt(speedLimit, 10);
 
     const amountOfPreviousSpeedlimitsToCheck = 3;
