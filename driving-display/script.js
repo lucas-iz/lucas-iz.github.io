@@ -165,6 +165,7 @@ async function updateData(position) {
       return;
     }
 
+    // TEST: Display closest point on map
     if (haversineDistance(lat, lng, closestPoint.lat, closestPoint.lon) > 10) {
       // Display closest point on map
       if (closestPointMarker) {
@@ -381,6 +382,8 @@ async function updateSpeedLimit(lat, lng, data) {
   // TODO: To something with the predicted next way. Check with speedlimit from current way (???)
 
   let speedLimit = currentWay.tags.maxspeed;
+
+  document.getElementById("heading").textContent += ` | ${speedLimit || "-"}`;
 
   const speedlimitDiv = document.getElementById("speedlimit");
 
