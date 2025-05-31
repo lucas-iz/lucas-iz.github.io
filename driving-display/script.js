@@ -164,19 +164,20 @@ async function updateData(position) {
       return;
     }
 
-    // Display closest point on map
-    const closestPointMarker = L.circleMarker(
-      [closestPoint.lat, closestPoint.lon],
-      {
-        radius: 6,
-        fillColor: "#ff0000",
-        color: "#800000",
-        weight: 1,
-        opacity: 1,
-        fillOpacity: 1,
-      }
-    ).addTo(map);
-    closestPointMarker.setZIndexOffset(10);
+    if (haversineDistance(lat, lng, closestPoint.lat, closestPoint.lon) > 10) {
+      // Display closest point on map
+      const closestPointMarker = L.circleMarker(
+        [closestPoint.lat, closestPoint.lon],
+        {
+          radius: 6,
+          fillColor: "#ff0000",
+          color: "#800000",
+          weight: 1,
+          opacity: 1,
+          fillOpacity: 1,
+        }
+      ).addTo(map);
+    }
 
     const updatedData = await fetchWays(closestPoint.lat, closestPoint.lon);
     console.log("Updated data:", updatedData);
@@ -374,7 +375,7 @@ async function updateSpeedLimit(lat, lng, data) {
 
   // TODO: To something with the predicted next way. Check with speedlimit from current way (???)
 
-  let speedLimit = currentWay.tags.maxspeed;
+  let speedLimit = "30"; //currentWay.tags.maxspeed;
 
   const speedlimitDiv = document.getElementById("speedlimit");
 
@@ -404,7 +405,10 @@ async function updateSpeedLimit(lat, lng, data) {
       if (allEqual && speedlimitSameAsPrevious) {
         // Change speedlimit
         const speedlimitImg = document.createElement("img");
-        speedlimitImg.src = `verkehrszeichen/274-${speedLimit}.png`;
+
+        if (speedLimit == 5 || speedLimit % 10 == 0) {
+          speedlimitImg.src = `verkehrszeichen/274-${speedLimit}.png`; // Only display speedlimits-signs that exist
+        }
         speedlimitImg.alt = `Speed Limit: ${speedLimit}`;
 
         document.getElementById("speedlimit").innerHTML = "";
@@ -432,10 +436,12 @@ function updateOvertakingBan(data) {
   if (overtakingBan === "no") {
     overtakingBanImg.src = "verkehrszeichen/276.png";
     overtakingBanImg.alt = "Overtaking Ban";
+    overtakingBanDiv.innerHTML = "";
     overtakingBanDiv.appendChild(overtakingBanImg);
   } else if (overtakingBanForTrucks === "no") {
     overtakingBanImg.src = "verkehrszeichen/277.png";
     overtakingBanImg.alt = "Overtaking Ban for Trucks";
+    overtakingBanDiv.innerHTML = "";
     overtakingBanDiv.appendChild(overtakingBanImg);
   } else {
     overtakingBanDiv.innerHTML = "";
