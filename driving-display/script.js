@@ -56,6 +56,7 @@ let wakeLock = null;
 var map = L.map("map").fitWorld();
 let positionMarker = null;
 let positionCircle = null;
+let closestPointMarker = null;
 
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
@@ -166,17 +167,21 @@ async function updateData(position) {
 
     if (haversineDistance(lat, lng, closestPoint.lat, closestPoint.lon) > 10) {
       // Display closest point on map
-      const closestPointMarker = L.circleMarker(
-        [closestPoint.lat, closestPoint.lon],
-        {
-          radius: 6,
-          fillColor: "#ff0000",
-          color: "#800000",
-          weight: 1,
-          opacity: 1,
-          fillOpacity: 1,
-        }
-      ).addTo(map);
+      if (closestPointMarker) {
+        closestPointMarker.setLatLng([closestPoint.lat, closestPoint.lon]);
+      } else {
+        closestPointMarker = L.circleMarker(
+          [closestPoint.lat, closestPoint.lon],
+          {
+            radius: 6,
+            fillColor: "#ff0000",
+            color: "#800000",
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 1,
+          }
+        ).addTo(map);
+      }
     }
 
     const updatedData = await fetchWays(closestPoint.lat, closestPoint.lon);
