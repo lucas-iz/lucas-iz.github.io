@@ -383,8 +383,6 @@ async function updateSpeedLimit(lat, lng, data) {
 
   let speedLimit = currentWay.tags.maxspeed;
 
-  document.getElementById("speedLimitText").textContent = speedLimit;
-
   const speedlimitDiv = document.getElementById("speedlimit");
 
   if (!speedLimit) {
@@ -400,50 +398,33 @@ async function updateSpeedLimit(lat, lng, data) {
     speedlimitDiv.innerHTML = "";
     speedlimitDiv.appendChild(speedlimitImg);
   } else {
+    console.log("Speed Limit:", speedLimit);
     if (speedLimit.includes("mph")) {
       speedLimit = speedLimit.replace("mph", "").trim();
     }
     speedLimit = parseInt(speedLimit, 10);
 
-    const amountOfPreviousSpeedlimitsToCheck = 3;
+    // TODO: How to make sure speedLimit doesnt jump around?
 
-    // Update speed display if last 3 values of previousSpeedlimits are equal to current speed limit
-    if (previousSpeedlimits.length >= amountOfPreviousSpeedlimitsToCheck) {
-      const allEqual = previousSpeedlimits.every(
-        (val, i, arr) => val === arr[0]
-      );
-      const speedlimitSameAsPrevious = previousSpeedlimits[0] === speedLimit;
-      if (allEqual && speedlimitSameAsPrevious) {
-        // Change speedlimit
-        const speedlimitImg = document.createElement("img");
+    const speedlimitImg = document.createElement("img");
 
-        if (speedLimit == 5 || speedLimit % 10 == 0) {
-          speedlimitImg.src = `verkehrszeichen/274-${speedLimit}.png`; // Only display speedlimits-signs that exist
-        }
-        speedlimitImg.alt = `Speed Limit: ${speedLimit}`;
-
-        document.getElementById("speedlimit").innerHTML = "";
-        document.getElementById("speedlimit").appendChild(speedlimitImg);
-      }
+    if (speedLimit == 5 || speedLimit % 10 == 0) {
+      speedlimitImg.src = `verkehrszeichen/274-${speedLimit}.png`; // Only display speedlimits-signs that exist
     }
+    speedlimitImg.alt = `Speed Limit: ${speedLimit}`;
 
-    // Add speedKPH to front of previousSpeedlimits
-    previousSpeedlimits.unshift(speedLimit);
-
-    // Remove last element of previousSpeedlimits if it has more than 3 elements
-    if (previousSpeedlimits.length > amountOfPreviousSpeedlimitsToCheck) {
-      previousSpeedlimits.pop();
-    }
+    document.getElementById("speedlimit").innerHTML = "";
+    document.getElementById("speedlimit").appendChild(speedlimitImg);
   }
 }
 
 function updateOvertakingBan(data) {
-  const overtakingBanDiv = document.getElementById("overtakingBan");
-
   const overtakingBanForTrucks = data.elements[0].tags["overtaking:hgv"];
   const overtakingBan = data.elements[0].tags["overtaking"];
 
+  const overtakingBanDiv = document.getElementById("overtakingBan");
   const overtakingBanImg = document.createElement("img");
+
   if (overtakingBan === "no") {
     overtakingBanImg.src = "verkehrszeichen/276.png";
     overtakingBanImg.alt = "Overtaking Ban";
