@@ -101,7 +101,9 @@ async function updateMarker(timestamp) {
   // For animation
   if (!lastPosition || !currentPosition) return;
 
-  console.log("Animation duration:", animationDuration);
+  document.getElementById(
+    "ms-in-marker"
+  ).innerText = `Marker duration: ${animationDuration} ms`;
 
   let elapsed = timestamp - animationStart;
   let t = Math.min(elapsed / animationDuration, 1);
@@ -147,8 +149,16 @@ function updateDuration(newDuration) {
     durations.shift(); // remove oldest
   }
 
+  console.log("Durations:", durations);
+
   const sum = durations.reduce((total, value) => total + value, 0);
   const avg = sum / durations.length;
+  document.getElementById("ms-avg").innerText = `Average duration: ${Math.round(
+    avg
+  )} ms`;
+  document.getElementById(
+    "ms-returned"
+  ).innerText = `Returned duration: ${Math.max(300, Math.min(avg, 5000))} ms`;
   return Math.max(300, Math.min(avg, 5000));
 }
 
