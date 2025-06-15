@@ -1,6 +1,6 @@
 import "./maplibre-gl.js";
 
-const middleOfGermany = [-122.00888166971566, 37.334862174662284]; // [10.4515, 51.1657];
+const middleOfGermany = [10.4515, 51.1657];
 const isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
 let map = null;
 let marker = null;
