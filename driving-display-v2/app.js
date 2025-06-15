@@ -75,7 +75,7 @@ async function initMap() {
 
   // map.addControl(new maplibregl.NavigationControl(), "top-right");
 
-  map.setPadding({ top: 300, bottom: 0, left: 0, right: 0 });
+  map.setPadding({ top: 400, bottom: 0, left: 0, right: 0 });
 
   if (isDarkMode) {
     map.setStyle("styles/dark.json");
