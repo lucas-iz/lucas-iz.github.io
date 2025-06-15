@@ -80,7 +80,7 @@ async function initMap() {
 
 function createMarker(position) {
   const location = [position.coords.longitude, position.coords.latitude];
-  const bearing = position.coords.heading || 0;
+  const bearing = position.coords.heading || 90;
 
   marker = new maplibregl.Marker({
     element: customMarker(),
@@ -94,8 +94,10 @@ function createMarker(position) {
 }
 
 async function updateMarker(timestamp) {
-  // For animation:
+  // For animation
   if (!lastPosition || !currentPosition) return;
+  console.log("Last Position:", lastPosition);
+  console.log("Current Position:", currentPosition);
 
   let elapsed = timestamp - animationStart;
   let t = Math.min(elapsed / animationDuration, 1);
@@ -120,12 +122,12 @@ async function updateMarker(timestamp) {
   marker.setRotation(bearing - 90);
 
   // Update map
-  // map.easeTo({
-  //   center: location,
-  //   zoom: 16,
-  //   bearing: bearing,
-  //   duration: 1000,
-  // });
+  map.easeTo({
+    center: location,
+    zoom: 16,
+    bearing: bearing,
+    duration: 1000,
+  });
 
   // Update speed
   // TODO
@@ -151,18 +153,32 @@ initMap();
 map.on("load", () => {
   getLocation().then((position) => {
     createMarker(position);
+
+    // Continuously watch the user's position
+    watchPosition((position) => {
+      lastPosition = currentPosition || {
+        coords: {
+          longitude: position.coords.longitude,
+          latitude: position.coords.latitude,
+          heading: position.coords.heading || 0,
+          speed: position.coords.speed || 0,
+        },
+      };
+
+      currentPosition = {
+        coords: {
+          longitude: position.coords.longitude,
+          latitude: position.coords.latitude,
+          heading: position.coords.heading || 0,
+          speed: position.coords.speed || 0,
+        },
+      };
+
+      animationStart = performance.now();
+
+      requestAnimationFrame(updateMarker);
+    });
   });
 });
 
-// Continuously watch the user's position
-watchPosition((position) => {
-  const { longitude, latitude } = position.coords;
-
-  lastPosition = currentPosition || { lng: longitude, lat: latitude };
-  currentPosition = { lng: longitude, lat: latitude };
-  animationStart = performance.now();
-
-  requestAnimationFrame(updateMarker);
-  updateMapView();
-});
 // https://maplibre.org/maplibre-gl-js/docs/API/#markers-and-controls
