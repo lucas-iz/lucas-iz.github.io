@@ -194,7 +194,7 @@ map.on("load", () => {
       // Dynamically calculate duration
       if (lastTimestamp !== null) {
         const interval = now - lastTimestamp;
-        animationDuration = updateDuration(interval);
+        animationDuration = updateDuration(interval) - 100;
       }
 
       lastTimestamp = now;
