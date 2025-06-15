@@ -1,7 +1,7 @@
 import "./maplibre-gl.js";
 
 const middleOfGermany = [10.4515, 51.1657];
-const isDarkMode = !window.matchMedia("(prefers-color-scheme: dark)").matches;
+const isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
 let map = null;
 let marker = null;
 
@@ -78,9 +78,6 @@ async function initMap() {
 }
 
 async function updatePositionOnMap(position) {
-  // Add delay to ensure the map is initialized
-  await new Promise((resolve) => setTimeout(resolve, 5000));
-
   // Set variables
   const location = [position.coords.longitude, position.coords.latitude];
   const bearing = position.coords.heading || 0;
@@ -99,7 +96,6 @@ async function updatePositionOnMap(position) {
 
     marker.setPitchAlignment("map");
     marker.setRotationAlignment("map");
-    marker.setRotation(0);
   }
   marker.setRotation(bearing);
 
@@ -115,7 +111,9 @@ async function updatePositionOnMap(position) {
   // TODO
 }
 
+// Function calls
 initMap();
+
 map.on("load", () => {
   getLocation().then((position) => {
     updatePositionOnMap(position);
