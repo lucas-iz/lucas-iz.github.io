@@ -100,8 +100,8 @@ function createMarker(position) {
 async function updateMarker(timestamp) {
   // For animation
   if (!lastPosition || !currentPosition) return;
-  console.log("Last Position:", lastPosition);
-  console.log("Current Position:", currentPosition);
+
+  console.log("Animation duration:", animationDuration);
 
   let elapsed = timestamp - animationStart;
   let t = Math.min(elapsed / animationDuration, 1);
@@ -139,16 +139,6 @@ async function updateMarker(timestamp) {
   if (t < 1) {
     requestAnimationFrame(updateMarker);
   }
-}
-
-function updateMapView() {
-  map.easeTo({
-    center: [currentPosition.coords.longitude, currentPosition.coords.latitude],
-    bearing: currentPosition.coords.heading || 0,
-    zoom: 16,
-    duration: animationDuration,
-    easing: (t) => t * (2 - t),
-  });
 }
 
 function updateDuration(newDuration) {
