@@ -6,8 +6,12 @@ let map = null;
 let marker = null;
 let lastPosition = null;
 let currentPosition = null;
+
+let lastTimestamp = null;
 let animationStart = null;
 let animationDuration = 1000;
+const durations = [];
+const MAX_SAMPLES = 5;
 
 async function getLocation() {
   // Get user's location using Geolocation API
@@ -147,6 +151,17 @@ function updateMapView() {
   });
 }
 
+function updateDuration(newDuration) {
+  durations.push(newDuration);
+  if (durations.length > MAX_SAMPLES) {
+    durations.shift(); // remove oldest
+  }
+
+  const sum = durations.reduce((total, value) => total + value, 0);
+  const avg = sum / durations.length;
+  return Math.max(300, Math.min(avg, 5000));
+}
+
 // Function calls
 initMap();
 
@@ -156,6 +171,8 @@ map.on("load", () => {
 
     // Continuously watch the user's position
     watchPosition((position) => {
+      const now = performance.now();
+
       lastPosition = currentPosition || {
         coords: {
           longitude: position.coords.longitude,
@@ -174,7 +191,14 @@ map.on("load", () => {
         },
       };
 
-      animationStart = performance.now();
+      // Dynamically calculate duration
+      if (lastTimestamp !== null) {
+        const interval = now - lastTimestamp;
+        animationDuration = updateDuration(interval);
+      }
+
+      lastTimestamp = now;
+      animationStart = now;
 
       requestAnimationFrame(updateMarker);
     });
