@@ -1,6 +1,6 @@
 import "./maplibre-gl.js";
 
-const middleOfGermany = [10.4515, 51.1657];
+const middleOfGermany = [-122.00888166971566, 37.334862174662284]; // [10.4515, 51.1657];
 const isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
 let map = null;
 let marker = null;
@@ -101,14 +101,10 @@ async function updateMarker(timestamp) {
   // For animation
   if (!lastPosition || !currentPosition) return;
 
-  document.getElementById(
-    "ms-in-marker"
-  ).innerText = `Marker duration: ${Math.round(animationDuration)} ms`;
-
   let elapsed = timestamp - animationStart;
   let t = Math.min(elapsed / animationDuration, 1);
 
-  let ease = t * (2 - t);
+  let ease = t; // t * (2 - t);
 
   let lng =
     lastPosition.coords.longitude +
@@ -136,8 +132,9 @@ async function updateMarker(timestamp) {
   });
 
   // Update speed
-  // TODO
-
+  document.getElementById("speed").innerText = `Speed: ${Math.round(
+    speedKMH
+  )} km/h`;
   if (t < 1) {
     requestAnimationFrame(updateMarker);
   }
@@ -149,16 +146,8 @@ function updateDuration(newDuration) {
     durations.shift(); // remove oldest
   }
 
-  console.log("Durations:", durations);
-
   const sum = durations.reduce((total, value) => total + value, 0);
   const avg = sum / durations.length;
-  document.getElementById("ms-avg").innerText = `Average duration: ${Math.round(
-    avg
-  )} ms`;
-  document.getElementById("ms-last").innerText = `Last duration: ${Math.round(
-    durations[durations.length - 1]
-  )} ms`;
   return Math.max(300, Math.min(avg, 5000));
 }
 
@@ -194,7 +183,7 @@ map.on("load", () => {
       // Dynamically calculate duration
       if (lastTimestamp !== null) {
         const interval = now - lastTimestamp;
-        animationDuration = updateDuration(interval) - 100;
+        animationDuration = updateDuration(interval);
       }
 
       lastTimestamp = now;
