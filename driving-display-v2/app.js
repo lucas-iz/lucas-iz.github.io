@@ -103,7 +103,7 @@ async function updateMarker(timestamp) {
 
   document.getElementById(
     "ms-in-marker"
-  ).innerText = `Marker duration: ${animationDuration} ms`;
+  ).innerText = `Marker duration: ${Math.round(animationDuration)} ms`;
 
   let elapsed = timestamp - animationStart;
   let t = Math.min(elapsed / animationDuration, 1);
@@ -156,9 +156,9 @@ function updateDuration(newDuration) {
   document.getElementById("ms-avg").innerText = `Average duration: ${Math.round(
     avg
   )} ms`;
-  document.getElementById(
-    "ms-returned"
-  ).innerText = `Returned duration: ${Math.max(300, Math.min(avg, 5000))} ms`;
+  document.getElementById("ms-last").innerText = `Last duration: ${Math.round(
+    durations[durations.length - 1]
+  )} ms`;
   return Math.max(300, Math.min(avg, 5000));
 }
 
