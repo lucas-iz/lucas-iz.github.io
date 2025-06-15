@@ -1,7 +1,7 @@
-import "https://unpkg.com/maplibre-gl/dist/maplibre-gl.js";
+import "./maplibre-gl.js";
 
 const middleOfGermany = [10.4515, 51.1657];
-const isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
+const isDarkMode = !window.matchMedia("(prefers-color-scheme: dark)").matches;
 let map = null;
 let marker = null;
 
@@ -68,28 +68,12 @@ async function initMap() {
     pitch: 45,
   });
 
-  //   map.addControl(new maplibregl.NavigationControl(), "top-right");
+  // map.addControl(new maplibregl.NavigationControl(), "top-right");
 
   map.setPadding({ top: 300, bottom: 0, left: 0, right: 0 });
 
   if (isDarkMode) {
     map.setStyle("styles/dark.json");
-  }
-
-  const location = await getLocation();
-  console.log("Location:", location);
-  if (location !== middleOfGermany) {
-    map.flyTo({ center: location, zoom: 16 });
-
-    marker = new maplibregl.Marker({
-      element: customMarker({ rotation: 0 }),
-    })
-      .setLngLat(location)
-      .addTo(map);
-
-    marker.setPitchAlignment("map");
-    marker.setRotationAlignment("map");
-    marker.setRotation(0);
   }
 }
 
@@ -108,13 +92,14 @@ async function updatePositionOnMap(position) {
     marker.setLngLat(location);
   } else {
     marker = new maplibregl.Marker({
-      element: customMarker({ rotation: 0 }),
+      element: customMarker(),
     })
       .setLngLat(location)
       .addTo(map);
 
     marker.setPitchAlignment("map");
     marker.setRotationAlignment("map");
+    marker.setRotation(0);
   }
   marker.setRotation(bearing);
 
