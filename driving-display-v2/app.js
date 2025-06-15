@@ -132,9 +132,7 @@ async function updateMarker(timestamp) {
   });
 
   // Update speed
-  document.getElementById("speed").innerText = `Speed: ${Math.round(
-    speedKMH
-  )} km/h`;
+  document.getElementById("speed").innerText = `${Math.round(speedKMH)} km/h`;
   if (t < 1) {
     requestAnimationFrame(updateMarker);
   }
