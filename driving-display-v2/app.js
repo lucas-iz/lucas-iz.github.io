@@ -13,6 +13,22 @@ let animationDuration = 1000;
 const durations = [];
 const MAX_SAMPLES = 5;
 
+function serviceWorkerRegistration() {
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker
+      .register("/sw.js")
+      .then(() => console.log("Service Worker registered"))
+      .catch((err) => console.error("Service Worker registration failed", err));
+  }
+
+  // Automatically re-request wake lock on visibility change
+  document.addEventListener("visibilitychange", () => {
+    if (wakeLock !== null && document.visibilityState === "visible") {
+      requestWakeLock();
+    }
+  });
+}
+
 async function getLocation() {
   // Get user's location using Geolocation API
   if ("geolocation" in navigator) {
@@ -150,6 +166,7 @@ function updateDuration(newDuration) {
 }
 
 // Function calls
+serviceWorkerRegistration();
 initMap();
 
 map.on("load", () => {
