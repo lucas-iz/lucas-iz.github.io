@@ -6,9 +6,6 @@ let map = null;
 let marker = null;
 
 async function getLocation() {
-  // For testing - TODO: Remove next line in production
-  // return [10.174104370648651, 54.31653015028949];
-
   // Get user's location using Geolocation API
   if ("geolocation" in navigator) {
     return new Promise((resolve, reject) => {
@@ -47,7 +44,7 @@ async function watchPosition(callback) {
   return middleOfGermany;
 }
 
-function customMarker({ rotation = 0 } = {}) {
+function customMarker() {
   const customMarker = document.createElement("div");
   customMarker.className = "marker";
   customMarker.innerHTML = `<svg fill="${
@@ -97,7 +94,7 @@ async function updatePositionOnMap(position) {
     marker.setPitchAlignment("map");
     marker.setRotationAlignment("map");
   }
-  marker.setRotation(bearing);
+  marker.setRotation(bearing - 90);
 
   // Update map
   map.easeTo({
