@@ -4,6 +4,10 @@ const middleOfGermany = [10.4515, 51.1657];
 const isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
 let map = null;
 let marker = null;
+let lastPosition = null;
+let currentPosition = null;
+let animationStart = null;
+let animationDuration = 1000;
 
 async function getLocation() {
   // Get user's location using Geolocation API
@@ -74,38 +78,71 @@ async function initMap() {
   }
 }
 
-async function updatePositionOnMap(position) {
-  // Set variables
+function createMarker(position) {
   const location = [position.coords.longitude, position.coords.latitude];
   const bearing = position.coords.heading || 0;
-  const speedMS = position.coords.speed || 0;
+
+  marker = new maplibregl.Marker({
+    element: customMarker(),
+  })
+    .setLngLat(location)
+    .addTo(map);
+
+  marker.setPitchAlignment("map");
+  marker.setRotationAlignment("map");
+  marker.setRotation(bearing - 90);
+}
+
+async function updateMarker(timestamp) {
+  // For animation:
+  if (!lastPosition || !currentPosition) return;
+
+  let elapsed = timestamp - animationStart;
+  let t = Math.min(elapsed / animationDuration, 1);
+
+  let ease = t * (2 - t);
+
+  let lng =
+    lastPosition.coords.longitude +
+    (currentPosition.coords.longitude - lastPosition.coords.longitude) * ease;
+  let lat =
+    lastPosition.coords.latitude +
+    (currentPosition.coords.latitude - lastPosition.coords.latitude) * ease;
+
+  // Set variables
+  const location = [lng, lat];
+  const bearing = currentPosition.coords.heading || 0;
+  const speedMS = currentPosition.coords.speed || 0;
   const speedKMH = speedMS * 3.6;
 
   // Update the marker
-  if (marker) {
-    marker.setLngLat(location);
-  } else {
-    marker = new maplibregl.Marker({
-      element: customMarker(),
-    })
-      .setLngLat(location)
-      .addTo(map);
-
-    marker.setPitchAlignment("map");
-    marker.setRotationAlignment("map");
-  }
+  marker.setLngLat(location);
   marker.setRotation(bearing - 90);
 
   // Update map
-  map.easeTo({
-    center: location,
-    zoom: 16,
-    bearing: bearing,
-    duration: 1000,
-  });
+  // map.easeTo({
+  //   center: location,
+  //   zoom: 16,
+  //   bearing: bearing,
+  //   duration: 1000,
+  // });
 
   // Update speed
   // TODO
+
+  if (t < 1) {
+    requestAnimationFrame(updateMarker);
+  }
+}
+
+function updateMapView() {
+  map.easeTo({
+    center: [currentPosition.coords.longitude, currentPosition.coords.latitude],
+    bearing: currentPosition.coords.heading || 0,
+    zoom: 16,
+    duration: animationDuration,
+    easing: (t) => t * (2 - t),
+  });
 }
 
 // Function calls
@@ -113,13 +150,19 @@ initMap();
 
 map.on("load", () => {
   getLocation().then((position) => {
-    updatePositionOnMap(position);
+    createMarker(position);
   });
 });
 
 // Continuously watch the user's position
 watchPosition((position) => {
-  updatePositionOnMap(position);
-});
+  const { longitude, latitude } = position.coords;
 
+  lastPosition = currentPosition || { lng: longitude, lat: latitude };
+  currentPosition = { lng: longitude, lat: latitude };
+  animationStart = performance.now();
+
+  requestAnimationFrame(updateMarker);
+  updateMapView();
+});
 // https://maplibre.org/maplibre-gl-js/docs/API/#markers-and-controls
