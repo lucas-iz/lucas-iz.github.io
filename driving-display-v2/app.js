@@ -6,6 +6,7 @@ let map = null;
 let marker = null;
 let lastPosition = null;
 let currentPosition = null;
+let firstCall = true;
 
 let lastTimestamp = null;
 let animationStart = null;
@@ -140,12 +141,25 @@ async function updateMarker(timestamp) {
   marker.setRotation(bearing - 90);
 
   // Update map
-  map.easeTo({
-    center: location,
-    zoom: 16,
-    bearing: bearing,
-    duration: 1000,
-  });
+  if( firstCall ) {
+    map.flyTo({
+      center: location,
+      zoom: 16,
+      bearing: bearing,
+      duration: 1000,
+    });
+  } else {
+    map.easeTo({
+      center: location,
+      zoom: 16,
+      bearing: bearing,
+      duration: 1000,
+    });
+  }
+
+  firstCall = false;
+
+  
 
   // Update speed
   document.getElementById("speed").innerText = `${Math.round(speedKMH)} km/h`;
@@ -163,6 +177,107 @@ function updateDuration(newDuration) {
   const sum = durations.reduce((total, value) => total + value, 0);
   const avg = sum / durations.length;
   return Math.max(300, Math.min(avg, 5000));
+}
+
+function updateData() {
+  // console.log(`Lat: ${currentPosition.coords.latitude}, Lng: ${currentPosition.coords.longitude}`);
+
+  fetchWays(currentPosition.coords.latitude, currentPosition.coords.longitude).then((ways) => {
+    // console.log("Ways:", ways);
+    // drawWays(ways);
+
+    let maxSpeed = ways[0].tags.maxspeed || "";
+    document.getElementById("speed-limit").innerText = `MAX ${maxSpeed.toString()}`; 
+  
+  });
+}
+
+function drawWays(ways) {
+  if (!ways || ways.length === 0) {
+    console.warn("No ways found");
+    return;
+  }
+
+  const features = ways.map((way) => {
+    const coordinates = way.geometry.map((point) => [point.lon, point.lat]);
+    return {
+      type: "Feature",
+      geometry: {
+        type: "LineString",
+        coordinates: coordinates,
+      },
+      properties: {
+        id: way.id,
+        name: way.tags.name || "Unnamed Way",
+      },
+    };
+  });
+
+  const geojson = {
+    type: "FeatureCollection",
+    features: features,
+  };
+
+  if (map.getSource("ways")) {
+    map.getSource("ways").setData(geojson);
+  } else {
+    map.addSource("ways", {
+      type: "geojson",
+      data: geojson,
+    });
+
+    map.addLayer({
+      id: "ways",
+      type: "line",
+      source: "ways",
+      layout: {
+        "line-join": "round",
+        "line-cap": "round",
+      },
+      paint: {
+        "line-color": "#ff0000",
+        "line-width": 4,
+        "line-opacity": 0.7,
+      },
+    });
+  }
+}
+
+async function fetchWays(lat, lng, radius = 5) {
+  const body = `
+                [out:json];
+                way(around:${radius}, ${lat}, ${lng})["highway"~"motorway|trunk|primary|secondary|tertiary|unclassified|residential|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link"];
+                out body geom;
+            `;
+
+  const data = await fetchData(body);
+
+  const ways = data.elements;
+  return ways;
+}
+
+async function fetchData(body) {
+  const url = "https://overpass-api.de/api/interpreter";
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: body,
+    });
+
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching speed limit:", error);
+    return null;
+  }
 }
 
 // Function calls
@@ -203,6 +318,8 @@ map.on("load", () => {
 
       lastTimestamp = now;
       animationStart = now;
+
+      updateData();
 
       requestAnimationFrame(updateMarker);
     });
