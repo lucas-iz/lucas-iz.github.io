@@ -18,8 +18,8 @@ body {
    background-size: contain;
    border-radius: 50%;
    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-   width: 20vw;
-   height: 20vw;
+   width: min(20vw, 60px);
+   height: min(20vw, 60px);
 }
 
 .text {
