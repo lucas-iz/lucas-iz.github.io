@@ -77,7 +77,9 @@ body {
 
 .green {
    background-color: rgba(0, 255, 0, 0.7) !important;
+   border: 1px solid rgba(0, 128, 0, 1);
 }
 .red {
    background-color: rgba(255, 0, 0, 0.7) !important;
+   border: 1px solid rgba(128, 0, 0, 1);
 }
