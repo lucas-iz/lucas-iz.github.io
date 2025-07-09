@@ -54,11 +54,11 @@ body {
 
 #speed-limit, #overtaking-ban {
    flex: 1;
-   font-size: max(3vw, 24px);
+   font-size: max(3vw, 20px);
    font-weight: bold;
    text-align: center;
    color: white;
-   padding: 10px;
+   padding: 50px;
 
    display: flex;
    align-items: center;
@@ -68,10 +68,11 @@ body {
 .speed-limit-sign, .overtaking-ban-sign {
   width: 100%; 
   height: 100%;
-}
+  border-radius: 50%;
 
-#overtaking-ban {
-   border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .green {

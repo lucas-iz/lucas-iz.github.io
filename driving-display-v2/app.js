@@ -214,16 +214,28 @@ function updateData() {
     const hgvOvertakingBan = ways["overtaking:hgv"];
 
     if (overtakingBan === "no") {
-      document.getElementById("overtaking-ban").innerHTML = "Overtaking is not allowed";
-      document.getElementById("overtaking-ban").classList.add("red");
+      const newDiv = document.createElement("div");
+      newDiv.classList.add("overtaking-ban-sign");
+      newDiv.classList.add("red");
+      newDiv.innerHTML = "Overtaking is not allowed";
+      document.getElementById("overtaking-ban").innerHTML = "";
+      document.getElementById("overtaking-ban").appendChild(newDiv);
     }
     else if (hgvOvertakingBan === "no") {
-      document.getElementById("overtaking-ban").innerHTML = "HGV overtaking not allowed";
-      document.getElementById("overtaking-ban").classList.add("red");
+      const newDiv = document.createElement("div");
+      newDiv.classList.add("overtaking-ban-sign");
+      newDiv.classList.add("red");
+      newDiv.innerHTML = "HGV overtaking not allowed";
+      document.getElementById("overtaking-ban").innerHTML = "";
+      document.getElementById("overtaking-ban").appendChild(newDiv);
     }
     else {
-      document.getElementById("overtaking-ban").innerHTML = "Overtaking is allowed";
-      document.getElementById("overtaking-ban").classList.add("green");
+      const newDiv = document.createElement("div");
+      newDiv.classList.add("overtaking-ban-sign");
+      newDiv.classList.add("green");
+      newDiv.innerHTML = "Overtaking is allowed";
+      document.getElementById("overtaking-ban").innerHTML = "";
+      document.getElementById("overtaking-ban").appendChild(newDiv);
     }
 
     /* Drawings for TESTING */
