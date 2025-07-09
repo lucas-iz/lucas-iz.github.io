@@ -92,7 +92,7 @@ async function initMap() {
 
   // map.addControl(new maplibregl.NavigationControl(), "top-right");
 
-  map.setPadding({ top: 400, bottom: 0, left: 0, right: 0 });
+  map.setPadding({ top: 0, bottom: 0, left: 0, right: 0 });
 
   if (isDarkMode) {
     map.setStyle("styles/dark.json");
@@ -187,8 +187,46 @@ function updateData() {
     // drawWays(ways);
 
     let maxSpeed = ways[0].tags.maxspeed || "";
-    document.getElementById("speed-limit").innerText = `MAX ${maxSpeed.toString()}`; 
-  
+
+    /* SPEEDLIMIT */
+    if( maxSpeed.includes(" mph") ) {
+      maxSpeed = maxSpeed.replace(" mph", "");
+    }
+    // Ensure maxSpeed is a number
+    if (typeof maxSpeed === "string") {
+      maxSpeed = parseInt(maxSpeed, 10);
+    }
+    if( maxSpeed == 5 || (maxSpeed >= 10 && maxSpeed <= 130 && maxSpeed % 10 == 0) ) {
+      const speedLimitElement = document.getElementById("speed-limit");
+      const speedLimitSign = document.createElement("img");
+      speedLimitSign.src = `images/verkehrszeichen/274-${maxSpeed}.png`;
+      speedLimitSign.alt = `Speed limit ${maxSpeed}`;
+      speedLimitSign.className = "speed-limit-sign";
+      speedLimitElement.innerHTML = ""; // Clear previous content
+      speedLimitElement.appendChild(speedLimitSign);
+    } else {
+      document.getElementById("speed-limit").innerHTML = `Speed limit ${maxSpeed}`;
+    }
+
+    /* OVERTAKING-BAN */
+    // General overtaking ban
+    const overtakingBan = ways[0].tags["overtaking"];
+    // HGV specific overtaking ban
+    const hgvOvertakingBan = ways["overtaking:hgv"];
+
+    if (overtakingBan === "no") {
+      document.getElementById("overtaking-ban").innerHTML = "Overtaking is not allowed";
+      document.getElementById("overtaking-ban").classList.add("red");
+    }
+    else if (hgvOvertakingBan === "no") {
+      document.getElementById("overtaking-ban").innerHTML = "HGV overtaking not allowed";
+      document.getElementById("overtaking-ban").classList.add("red");
+    }
+    else {
+      document.getElementById("overtaking-ban").innerHTML = "Overtaking is allowed";
+      document.getElementById("overtaking-ban").classList.add("green");
+    }
+    
   });
 }
 

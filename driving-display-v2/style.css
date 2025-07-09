@@ -39,3 +39,44 @@ body {
    padding: 5px 10px;
    border-radius: 5px;
 }
+
+#signs {
+   position: absolute;
+   bottom: 0;
+   left: 0;
+   right: 0;
+   width: 100vw;
+   height: 50vw;
+
+   display: flex;
+   flex-direction: row;
+}
+
+#speed-limit, #overtaking-ban {
+   flex: 1;
+   font-size: max(3vw, 24px);
+   font-weight: bold;
+   text-align: center;
+   color: white;
+   padding: 10px;
+
+   display: flex;
+   align-items: center;
+   justify-content: center;
+}
+
+.speed-limit-sign, .overtaking-ban-sign {
+  width: 100%; 
+  height: 100%;
+}
+
+#overtaking-ban {
+   border-radius: 50%;
+}
+
+.green {
+   background-color: rgba(0, 255, 0, 0.7) !important;
+}
+.red {
+   background-color: rgba(255, 0, 0, 0.7) !important;
+}
