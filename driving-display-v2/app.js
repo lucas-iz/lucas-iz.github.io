@@ -1,7 +1,7 @@
 import "./maplibre-gl.js";
 
 const middleOfGermany = [10.4515, 51.1657];
-const isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
+let isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
 let map = null;
 let marker = null;
 let lastPosition = null;
@@ -141,12 +141,10 @@ async function updateMarker(timestamp) {
   marker.setRotation(bearing - 90);
 
   // Update map
-  if( firstCall ) {
+  if (firstCall) {
     map.flyTo({
       center: location,
       zoom: 16,
-      bearing: bearing,
-      duration: 1000,
     });
   } else {
     map.easeTo({
@@ -158,8 +156,6 @@ async function updateMarker(timestamp) {
   }
 
   firstCall = false;
-
-  
 
   // Update speed
   document.getElementById("speed").innerText = `${Math.round(speedKMH)} km/h`;
@@ -182,7 +178,10 @@ function updateDuration(newDuration) {
 function updateData() {
   // console.log(`Lat: ${currentPosition.coords.latitude}, Lng: ${currentPosition.coords.longitude}`);
 
-  fetchWays(currentPosition.coords.latitude, currentPosition.coords.longitude).then((ways) => {
+  fetchWays(
+    currentPosition.coords.latitude, // 53.54836270448066,
+    currentPosition.coords.longitude // 9.983297349885174
+  ).then((ways) => {
     // console.log("Ways:", ways);
     // drawWays(ways);
 
@@ -226,7 +225,16 @@ function updateData() {
       document.getElementById("overtaking-ban").innerHTML = "Overtaking is allowed";
       document.getElementById("overtaking-ban").classList.add("green");
     }
-    
+
+    /* Drawings for TESTING */
+    drawWays(ways);
+
+    const closestWay = chooseWay(
+      ways,
+      currentPosition.coords.latitude,
+      currentPosition.coords.longitude,
+      currentPosition.coords.heading
+    );
   });
 }
 
@@ -236,7 +244,8 @@ function drawWays(ways) {
     return;
   }
 
-  const features = ways.map((way) => {
+  // Build LineString features for ways
+  const lineFeatures = ways.map((way) => {
     const coordinates = way.geometry.map((point) => [point.lon, point.lat]);
     return {
       type: "Feature",
@@ -247,21 +256,65 @@ function drawWays(ways) {
       properties: {
         id: way.id,
         name: way.tags.name || "Unnamed Way",
+        closest:
+          chooseWay(
+            ways,
+            currentPosition.coords.latitude,
+            currentPosition.coords.longitude,
+            currentPosition.coords.heading
+          ) === way,
       },
     };
   });
 
-  const geojson = {
+  // Build Point features for endpoints
+  const endpointFeatures = ways.flatMap((way) => {
+    if (!way.geometry || way.geometry.length < 2) return [];
+    const start = way.geometry[0];
+    const end = way.geometry[way.geometry.length - 1];
+    return [
+      {
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: [start.lon, start.lat],
+        },
+        properties: {
+          id: way.id + "_start",
+          endpoint: "start",
+        },
+      },
+      {
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: [end.lon, end.lat],
+        },
+        properties: {
+          id: way.id + "_end",
+          endpoint: "end",
+        },
+      },
+    ];
+  });
+
+  // GeoJSON collections
+  const linesGeojson = {
     type: "FeatureCollection",
-    features: features,
+    features: lineFeatures,
+  };
+  const endpointsGeojson = {
+    type: "FeatureCollection",
+    features: endpointFeatures,
   };
 
+  // Draw lines
   if (map.getSource("ways")) {
-    map.getSource("ways").setData(geojson);
+    map.getSource("ways").setData(linesGeojson);
   } else {
     map.addSource("ways", {
       type: "geojson",
-      data: geojson,
+      data: linesGeojson,
     });
 
     map.addLayer({
@@ -273,9 +326,44 @@ function drawWays(ways) {
         "line-cap": "round",
       },
       paint: {
-        "line-color": "#ff0000",
+        "line-color": [
+          "case",
+          ["boolean", ["get", "closest"], false],
+          "#00ff00", // Green for the closest way
+          "#ff0000", // Red for others
+        ],
         "line-width": 4,
         "line-opacity": 0.7,
+      },
+    });
+  }
+
+  // Draw endpoints
+  if (map.getSource("way-endpoints")) {
+    map.getSource("way-endpoints").setData(endpointsGeojson);
+  } else {
+    map.addSource("way-endpoints", {
+      type: "geojson",
+      data: endpointsGeojson,
+    });
+
+    map.addLayer({
+      id: "way-endpoints",
+      type: "circle",
+      source: "way-endpoints",
+      paint: {
+        "circle-radius": 6,
+        "circle-color": [
+          "match",
+          ["get", "endpoint"],
+          "start",
+          "#ff0000",
+          "end",
+          "#00ff00",
+          "#888888",
+        ],
+        "circle-stroke-width": 2,
+        "circle-stroke-color": "#fff",
       },
     });
   }
@@ -327,13 +415,23 @@ map.on("load", () => {
     createMarker(position);
 
     // Continuously watch the user's position
-    watchPosition((position) => {
+    watchPosition(async (position) => {
       const now = performance.now();
+
+      // TODO: Actually use closest point (TO FIX)
+      // const closestPoint = await snapToClosestRoad({
+      //   lat: position.coords.latitude,
+      //   lon: position.coords.longitude,
+      // });
+      const closestPoint = {
+        lat: position.coords.latitude,
+        lon: position.coords.longitude,
+      };
 
       lastPosition = currentPosition || {
         coords: {
-          longitude: position.coords.longitude,
-          latitude: position.coords.latitude,
+          longitude: closestPoint.lon,
+          latitude: closestPoint.lat,
           heading: position.coords.heading || 0,
           speed: position.coords.speed || 0,
         },
@@ -341,8 +439,8 @@ map.on("load", () => {
 
       currentPosition = {
         coords: {
-          longitude: position.coords.longitude,
-          latitude: position.coords.latitude,
+          longitude: closestPoint.lon,
+          latitude: closestPoint.lat,
           heading: position.coords.heading || 0,
           speed: position.coords.speed || 0,
         },
@@ -365,3 +463,162 @@ map.on("load", () => {
 });
 
 // https://maplibre.org/maplibre-gl-js/docs/API/#markers-and-controls
+
+function getWayHeading(way, lat, lng) {
+  if (!way.geometry || way.geometry.length < 2) {
+    console.warn("Way does not have enough points to calculate heading");
+    return 0; // Default heading if not enough points
+  }
+
+  const geometry = way.geometry;
+
+  // Make sure the first point of the geometry is the closest to the given point
+  const firstPoint = geometry[0];
+  const lastPoint = geometry[geometry.length - 1];
+
+  function distance(a, b) {
+    const dx = a.lon - b.lon;
+    const dy = a.lat - b.lat;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  const refPoint = { lon: lng, lat: lat };
+  const distToFirst = distance(firstPoint, refPoint);
+  const distToLast = distance(lastPoint, refPoint);
+
+  if (distToLast < distToFirst) {
+    geometry.reverse();
+  }
+
+  const headings = [];
+  // Calculate heading for each segment of the way
+  for (let i = 0; i < geometry.length - 1; i++) {
+    if (geometry[i].lon === undefined || geometry[i].lat === undefined) {
+      console.warn("Way point does not have lon/lat properties");
+      return 0; // Default heading if point is invalid
+    }
+    if (isNaN(geometry[i].lon) || isNaN(geometry[i].lat)) {
+      console.warn("Way point has NaN values for lon/lat");
+      return 0; // Default heading if point is invalid
+    }
+    const start = geometry[i];
+    const end = geometry[i + 1];
+    const dx = end.lon - start.lon;
+    const dy = end.lat - start.lat;
+    const heading = Math.atan2(dy, dx) * (180 / Math.PI);
+    headings.push((heading + 360) % 360); // Normalize to [0, 360) range
+  }
+
+  // Calculate average heading
+  const averageHeading =
+    headings.reduce((sum, h) => sum + h, 0) / headings.length;
+
+  return averageHeading;
+}
+
+function chooseWay(ways, lat, lng, hdg) {
+  let closestHeading = null;
+  let closestWay = null;
+  for (const way of ways) {
+    // Choose the way with the closest heading to the given heading
+    const wayHeading = getWayHeading(way, lat, lng) - 90;
+    if (
+      closestHeading === null ||
+      Math.abs(wayHeading - hdg) < Math.abs(closestHeading - hdg)
+    ) {
+      closestHeading = wayHeading;
+      closestWay = way;
+    }
+  }
+
+  // drawWays(ways);
+
+  return closestWay;
+}
+
+/*** HELPER FUNCTIONS ***/
+
+/* Functions for snapping to the closest road segment */
+
+// Convert degrees to radians
+function toRad(deg) {
+  return (deg * Math.PI) / 180;
+}
+
+// Approximate Earth distance between two lat/lon points (Haversine)
+function haversineDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371000; // Earth radius in meters
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Project point P onto line segment AB
+function closestPointOnSegment(A, B, P) {
+  const toXY = ({ lat, lon }) => ({
+    x: lon * 111320 * Math.cos(toRad(lat)), // rough equirectangular projection
+    y: lat * 110540,
+  });
+
+  const a = toXY(A);
+  const b = toXY(B);
+  const p = toXY(P);
+
+  const ab = { x: b.x - a.x, y: b.y - a.y };
+  const ap = { x: p.x - a.x, y: p.y - a.y };
+
+  const ab2 = ab.x ** 2 + ab.y ** 2;
+  const dot = ap.x * ab.x + ap.y * ab.y;
+  const t = Math.max(0, Math.min(1, dot / ab2)); // clamp to [0,1]
+
+  const closest = {
+    x: a.x + t * ab.x,
+    y: a.y + t * ab.y,
+  };
+
+  // Convert back to lat/lon
+  return {
+    lat: closest.y / 110540,
+    lon: closest.x / (111320 * Math.cos(toRad(P.lat))),
+  };
+}
+
+// Main function: find closest point on all ways
+async function snapToClosestRoad(inputPoint) {
+  let minDist = Infinity;
+  let closestPoint = null;
+  let closestWay = null;
+
+  console.log("Snapping to closest road...");
+  console.log(`Input Point: lat=${inputPoint.lat}, lon=${inputPoint.lon}`);
+
+  const ways = await fetchWays(inputPoint.lat, inputPoint.lon, 50);
+
+  ways.forEach((way) => {
+    const geometry = way.geometry;
+    for (let i = 0; i < geometry.length - 1; i++) {
+      const A = geometry[i];
+      const B = geometry[i + 1];
+      const projected = closestPointOnSegment(A, B, inputPoint);
+      const dist = haversineDistance(
+        inputPoint.lat,
+        inputPoint.lon,
+        projected.lat,
+        projected.lon
+      );
+
+      if (dist < minDist) {
+        minDist = dist;
+        closestPoint = projected;
+        closestWay = way;
+      }
+    }
+  });
+
+  // return closestWay;
+  return closestPoint;
+}
